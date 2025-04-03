@@ -12,14 +12,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Install dependencies
-        run: |
-          source .venv/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install pytest  # Указываем конкретные зависимости
-          # или если у вас правильный requirements.txt:
-          # python -m pip install -r requirements.txt
           
 
       - name: Run tests
