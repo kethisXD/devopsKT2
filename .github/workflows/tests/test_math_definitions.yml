@@ -1,4 +1,4 @@
-name: Test application
+name: Test math definitions
 on:
   push:
     branches:
@@ -21,4 +21,4 @@ jobs:
           
       - name: Run tests
         run: |
-          python -m unittest discover test/
+          python -m unittest test_math_def.py
