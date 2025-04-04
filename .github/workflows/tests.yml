@@ -10,7 +10,7 @@ on:
     - main
   
 jobs:
-  test:
+  test_math-def:
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -26,8 +26,23 @@ jobs:
           source .venv/bin/activate
           python -m unittest test/test_math_def.py
 
+  test_ctl:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up venv
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+        
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          python -m unittest test/test_ctl.py
   set-pr-status:
-    needs: test 
+    needs: [ test_math-def, test_ctl ] 
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -42,3 +57,4 @@ jobs:
               repo: context.repo.repo,
               labels: ['test-passed']
             })
+
