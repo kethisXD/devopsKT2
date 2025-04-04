@@ -21,4 +21,4 @@ jobs:
           
       - name: Run tests
         run: |
-          python -m unittest test_math_def.py
+          python -m unittest test/test_math_def.py
