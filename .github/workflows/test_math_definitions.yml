@@ -5,20 +5,40 @@ on:
       - main
       - dev
       - workflow-development
-
-
+  pull_request:
+    branches:
+    - main
+  
 jobs:
   test:
     runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-          
+        
       - name: Set up venv
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          
+        
       - name: Run tests
         run: |
+          source .venv/bin/activate
           python -m unittest test/test_math_def.py
+
+  set-pr-status:
+    needs: test 
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set PR status
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['test-passed']
+            })
