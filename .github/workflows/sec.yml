@@ -11,7 +11,8 @@ jobs:
   security:
     runs-on: self-hosted
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
     
     - name: Check Python version
       run: |
@@ -26,7 +27,6 @@ jobs:
 
     - name: Install security tools
       run: |
-        python -m pip install --upgrade pip
         pip install bandit safety
     
     - name: Security code scan (Bandit)
