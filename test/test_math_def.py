@@ -29,6 +29,10 @@ class TestMathOperations(unittest.TestCase):
         with self.assertRaises(ValueError):
             modulo(5, 0)
 
+    def test_subtract(self):
+        self.assertEqual(subtract(5, 3), 2)
+        self.assertEqual(subtract(2, 5), -3)
+        self.assertEqual(subtract(0, 0), 0)
 
 if __name__ == '__main__':
     unittest.main()

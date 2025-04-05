@@ -25,7 +25,7 @@ jobs:
     
     - name: Security code scan (Bandit)
       run: |
-        bandit -r src/ -f json -o bandit-results.json
+        bandit -r app_ctl/ -f json -o bandit-results.json
         
     - name: Dependency vulnerability check
       run: |

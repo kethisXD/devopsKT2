@@ -67,4 +67,4 @@ jobs:
       - name: Run security check
         run: |
           pip install bandit
-          bandit -r . --exclude test/
+          bandit -r app_ctl/

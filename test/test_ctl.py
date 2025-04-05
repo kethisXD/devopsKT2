@@ -23,6 +23,16 @@ class TestCalcCTL(unittest.TestCase):
             capture_output=True, text=True
         )
         self.assertIn('Error', result.stderr)
-        
+
+class TestCalcCTLSecurity(unittest.TestCase):
+    def test_input_validation(self):
+        """Test handling of invalid inputs."""
+        result = subprocess.run(
+            [sys.executable, '-m', 'app_ctl.calctl', 'add', '5', '; echo INJECTION'],
+            capture_output=True, text=True
+        )
+        self.assertNotEqual(result.returncode, 0)  
+
+
 if __name__ == '__main__':
     unittest.main()
