@@ -17,7 +17,13 @@ jobs:
       run: |
         python --version
         python -m pip --version
-    
+
+    - name: Set up venv
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+
+
     - name: Install security tools
       run: |
         python -m pip install --upgrade pip
