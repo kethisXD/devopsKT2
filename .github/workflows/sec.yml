@@ -22,25 +22,27 @@ jobs:
     - name: Set up venv
       run: |
         python -m venv .venv
-        source .venv/bin/activate
+
 
 
     - name: Install security tools
       run: |
-        pip install bandit safety
+        source .venv/bin/activate 
+        .venv/bin/pip install bandit safety
     
     - name: Security code scan (Bandit)
       run: |
-        bandit -r app_ctl/ -f json -o bandit-results.json
+        source .venv/bin/activate
+        .venv/bin/bandit -r app_ctl/ -f json -o bandit-results.json
         
     - name: Dependency vulnerability check
       run: |
-        safety check
+        source .venv/bin/activate
+        .venv/bin/safety check
         
     - name: Antivirus scan
       run: |
-        sudo apt-get update
-        sudo apt-get install -y clamav
+        sudo pacman -Sy clamav --noconfirm
         sudo freshclam
         clamscan --recursive --infected app_ctl/
     
