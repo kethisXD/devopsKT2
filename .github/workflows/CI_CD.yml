@@ -116,71 +116,133 @@ jobs:
                 labels: ['sec-passed']
               })
   update-version:
-    needs: [test_math-def, test_ctl, security]
-    if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'feature') || contains(github.event.pull_request.labels.*.name, 'hotfix'))
-    runs-on: self-hosted
-    steps: 
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }} # Явно указываем ветку PR
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }} # Токен для push
-    
+      needs: [test_math-def, test_ctl, security]
+      if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'feature') || contains(github.event.pull_request.labels.*.name, 'hotfix'))
+      runs-on: self-hosted
+      steps: 
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            ref: ${{ github.head_ref }} # Явно указываем ветку PR
+            fetch-depth: 0
+            token: ${{ secrets.GITHUB_TOKEN }} # Токен для push
       
-      - name: Update version based on PR label
-        id: version
-        run: |
-          # Читаем текущую версию
-          CURRENT_VERSION=$(cat version.txt)
-          echo "Current version: $CURRENT_VERSION"
-          
-          # Разбиваем на компоненты (например, 0.1.0 -> MAJOR=0, MINOR=1, PATCH=0)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-          
-          # Определяем тип обновления на основе метки PR
-          UPDATE_TYPE="patch"
-          if ${{ contains(github.event.pull_request.labels.*.name, 'feature') }}; then
-            UPDATE_TYPE="minor"
-            # Увеличиваем MINOR и сбрасываем PATCH
-            MINOR=$((MINOR + 1))
-            PATCH=0
-          else
-            # Просто увеличиваем PATCH
-            PATCH=$((PATCH + 1))
-          fi
-          
-          # Формируем новую версию
-          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          echo "New version: $NEW_VERSION"
-          
-          # Записываем в файл
-          echo "$NEW_VERSION" > version.txt
-          
-          # Обновляем версию в setup.py
-          sed -i "s/version=\"[0-9]*\.[0-9]*\.[0-9]*\"/version=\"$NEW_VERSION\"/" setup.py
-          
-          # Сохраняем переменные для следующих шагов
-          echo "old_version=$CURRENT_VERSION" >> $GITHUB_ENV
-          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
-          echo "update_type=$UPDATE_TYPE" >> $GITHUB_ENV
+        
+        - name: Update version based on PR label
+          id: version
+          run: |
+            # Читаем текущую версию
+            CURRENT_VERSION=$(cat version.txt)
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Разбиваем на компоненты (например, 0.1.0 -> MAJOR=0, MINOR=1, PATCH=0)
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+            
+            # Определяем тип обновления на основе метки PR
+            UPDATE_TYPE="patch"
+            if ${{ contains(github.event.pull_request.labels.*.name, 'feature') }}; then
+              UPDATE_TYPE="minor"
+              # Увеличиваем MINOR и сбрасываем PATCH
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              # Просто увеличиваем PATCH
+              PATCH=$((PATCH + 1))
+            fi
+            
+            # Формируем новую версию
+            NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+            echo "New version: $NEW_VERSION"
+            
+            # Записываем в файл
+            echo "$NEW_VERSION" > version.txt
+            
+            # Обновляем версию в setup.py
+            sed -i "s/version=\"[0-9]*\.[0-9]*\.[0-9]*\"/version=\"$NEW_VERSION\"/" setup.py
+            
+            # Сохраняем переменные для следующих шагов
+            echo "old_version=$CURRENT_VERSION" >> $GITHUB_ENV
+            echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+            echo "update_type=$UPDATE_TYPE" >> $GITHUB_ENV
 
-      - name: Commit version update
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add version.txt
-          git commit -m "[${{ env.new_version }}] <- [${{ env.old_version }}] ${{ env.update_type }} up"
-          git push origin ${{ github.head_ref }}
+        - name: Commit version update
+          run: |
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add version.txt
+            git commit -m "[${{ env.new_version }}] <- [${{ env.old_version }}] ${{ env.update_type }} up"
+            git push origin ${{ github.head_ref }}
 
-      - name: Add PR label
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['PR-${{ env.new_version }}']
-            })
+        - name: Add PR label
+          uses: actions/github-script@v6
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+              github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['PR-${{ env.new_version }}']
+              })
+  update-changelog:
+    needs: [update-version]
+    runs-on: self-hosted
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update CHANGELOG.md
+      id: changelog
+      run: |
+        CURRENT_DATE=$(date +"%Y-%m-%d")
+        NEW_VERSION=$(cat version.txt)
+        BRANCH="${{ github.head_ref }}"
+        PR_NUMBER="${{ github.event.pull_request.number }}"
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        
+        # Создаем новую запись для changelog
+        CHANGELOG_CONTENT="# Changelog\n\n"
+        CHANGELOG_CONTENT+="## [${NEW_VERSION}] - ${CURRENT_DATE}\n"
+        CHANGELOG_CONTENT+="### Branch: ${BRANCH} (PR #${PR_NUMBER})\n"
+        
+        # Определяем тип изменений
+        if [[ "${{ contains(github.event.pull_request.labels.*.name, 'feature') }}" == "true" ]]; then
+          CHANGELOG_CONTENT+="- ✨ Новая функциональность: ${PR_TITLE}\n\n"
+        elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'hotfix') }}" == "true" ]]; then
+          CHANGELOG_CONTENT+="- 🐛 Исправление ошибки: ${PR_TITLE}\n\n"
+        else
+          CHANGELOG_CONTENT+="- 🔄 Обновление: ${PR_TITLE}\n\n"
+        fi
+        
+        # Добавляем существующее содержимое, если файл уже есть
+        if [ -f CHANGELOG.md ]; then
+          tail -n +2 CHANGELOG.md >> temp_changelog
+          echo -e "${CHANGELOG_CONTENT}" > CHANGELOG.md
+          cat temp_changelog >> CHANGELOG.md
+          rm temp_changelog
+        else
+          echo -e "${CHANGELOG_CONTENT}" > CHANGELOG.md
+        fi  
+
+    - name: Commit and push CHANGELOG.md
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add CHANGELOG.md
+        git commit -m "Update CHANGELOG.md for version $(cat version.txt)"
+        git push origin ${{ github.head_ref }}
+
+    - name: Add changelog label
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['changelog']
+          })
