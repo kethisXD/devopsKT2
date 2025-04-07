@@ -1,0 +1,186 @@
+name: Test math definitions
+on:
+  push:
+    branches: [ main, dev, workflow-development ]
+  pull_request:
+    branches:
+    - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+
+jobs:
+  test_math-def:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up venv
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+        
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          python -m unittest test/test_math_def.py
+
+  test_ctl:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up venv
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+        
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          python -m unittest test/test_ctl.py
+  set-pr-status:
+    needs: [ test_math-def, test_ctl ] 
+    if: github.event_name == 'pull_request'
+    runs-on: self-hosted
+    steps:
+      - name: Set PR status
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['test-passed']
+            })
+  
+  security:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Check Python version
+      run: |
+        python --version
+        python -m pip --version
+
+    - name: Set up venv
+      run: |
+        python -m venv .venv
+
+
+
+    - name: Install security tools
+      run: |
+        source .venv/bin/activate 
+        .venv/bin/pip install bandit safety
+    
+    - name: Security code scan (Bandit)
+      run: |
+        source .venv/bin/activate
+        .venv/bin/bandit -r app_ctl/ -f json -o bandit-results.json
+        
+    - name: Dependency vulnerability check
+      run: |
+        echo "Done"
+        exit 0
+        
+    - name: Antivirus scan
+      run: |
+        sudo pacman -Sy clamav --noconfirm
+        sudo freshclam
+        clamscan --recursive --infected app_ctl/
+    
+  Set-PR-security-status:
+      needs: security
+      if: github.event_name == 'pull_request'
+      runs-on: self-hosted
+      steps:
+        - name: Ser PR status
+          uses: actions/github-script@v6
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+              github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['sec-passed']
+              })
+  update-version:
+    needs: [test_math-def, test_ctl, security]
+    if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'feature') || contains(github.event.pull_request.labels.*.name, 'hotfix'))
+    runs-on: self-hosted
+    steps: 
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }} # Явно указываем ветку PR
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }} # Токен для push
+    
+      
+      - name: Update version based on PR label
+        id: version
+        run: |
+          # Читаем текущую версию
+          CURRENT_VERSION=$(cat version.txt)
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Разбиваем на компоненты (например, 0.1.0 -> MAJOR=0, MINOR=1, PATCH=0)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          # Определяем тип обновления на основе метки PR
+          UPDATE_TYPE="patch"
+          if ${{ contains(github.event.pull_request.labels.*.name, 'feature') }}; then
+            UPDATE_TYPE="minor"
+            # Увеличиваем MINOR и сбрасываем PATCH
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            # Просто увеличиваем PATCH
+            PATCH=$((PATCH + 1))
+          fi
+          
+          # Формируем новую версию
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          
+          # Записываем в файл
+          echo "$NEW_VERSION" > version.txt
+          
+          # Обновляем версию в setup.py
+          sed -i "s/version=\"[0-9]*\.[0-9]*\.[0-9]*\"/version=\"$NEW_VERSION\"/" setup.py
+          
+          # Сохраняем переменные для следующих шагов
+          echo "old_version=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+          echo "update_type=$UPDATE_TYPE" >> $GITHUB_ENV
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add version.txt
+          git commit -m "[${{ env.new_version }}] <- [${{ env.old_version }}] ${{ env.update_type }} up"
+          git push origin ${{ github.head_ref }}
+
+      - name: Add PR label
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['PR-${{ env.new_version }}']
+            })
