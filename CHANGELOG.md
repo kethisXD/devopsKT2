@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.0] - 2025-04-07
+### Branch: dev (PR #8)
+- ✨ Новая функциональность: fix: add permissions docker workflow
+
+
+
 ## [0.5.0] - 2025-04-07
 ### Branch: dev (PR #7)
 - ✨ Новая функциональность: test docker #3
