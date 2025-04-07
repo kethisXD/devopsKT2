@@ -5,7 +5,13 @@ on:
   pull_request:
     branches:
     - main
-  
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+
 jobs:
   test_math-def:
     runs-on: self-hosted
@@ -117,7 +123,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.head_ref }} # Явно указываем ветку PR
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }} # Токен для push
+    
       
       - name: Update version based on PR label
         id: version
@@ -155,15 +164,15 @@ jobs:
           echo "old_version=$CURRENT_VERSION" >> $GITHUB_ENV
           echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
           echo "update_type=$UPDATE_TYPE" >> $GITHUB_ENV
-      
+
       - name: Commit version update
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add version.txt setup.py
+          git add version.txt
           git commit -m "[${{ env.new_version }}] <- [${{ env.old_version }}] ${{ env.update_type }} up"
-          git push
-      
+          git push origin ${{ github.head_ref }}
+
       - name: Add PR label
         uses: actions/github-script@v6
         with:
