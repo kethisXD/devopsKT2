@@ -47,7 +47,7 @@ jobs:
   set-pr-status:
     needs: [ test_math-def, test_ctl ] 
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Set PR status
         uses: actions/github-script@v6
