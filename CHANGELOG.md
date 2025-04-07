@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2025-04-07
+### Branch: dev (PR #7)
+- ✨ Новая функциональность: test docker #3
+
+
+
 ## [0.4.0] - 2025-04-07
 ### Branch: dev (PR #5)
 - ✨ Новая функциональность: test auto change changelog
