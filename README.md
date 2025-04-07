@@ -1,3 +1,32 @@
+# CalcCTL - Калькулятор командной строки
+
+Простая утилита командной строки для выполнения базовых математических операций.
+
+## Использование
+
+```bash
+# Сложение
+calcctl add 5 3
+
+# Вычитание
+calcctl subtract 10 4
+
+# Умножение
+calcctl multiply 6 7
+
+# Деление
+calcctl divide 15 3
+```
+
+# Docker
+Этот проект управляется с помощью CI\CD и автоматически публикует в Docker Hub.
+
+## Docker Usage
+
+Pull the image:
+```bash
+docker pull username/calcctl:latest
+```
 # Руководство по внесению изменений
 
 ## Обновление версий
