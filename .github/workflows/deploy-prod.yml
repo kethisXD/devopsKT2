@@ -1,0 +1,66 @@
+name: Deploy to Production
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cat version.txt)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      
+      - name: Pull latest Docker image
+        run: |
+          docker pull kethisxd/calcctl:latest
+          docker pull kethisxd/calcctl:v${{ env.VERSION }}
+      
+      - name: Deploy with Docker Compose
+        run: |
+          # Создаем директорию для данных, если не существует
+          mkdir -p data
+          
+          # Останавливаем предыдущий контейнер, если запущен
+          docker-compose down || true
+          
+          # Запускаем новый контейнер
+          docker-compose up -d
+          
+          # Проверяем, что контейнер запущен
+          docker ps | grep calcctl-prod
+      
+      - name: Verify deployment
+        run: |
+          # Тестируем, что наше приложение работает
+          docker exec calcctl-prod calcctl add 5 3
+          
+          # Сохраняем информацию о деплое
+          echo "Deployed version ${{ env.VERSION }} at $(date)" >> deployment-log.txt
+      
+      - name: Add PROD tag
+        if: github.event.pull_request.number != ''
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['PROD']
+            })
