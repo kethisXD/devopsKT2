@@ -17,8 +17,8 @@ permissions:
   id-token: write
 jobs:
   build-and-push:
-    runs-on: self-hosted
     if: github.event.pull_request.merged == true
+    runs-on: self-hosted
     
     steps:
       - name: Checkout code
