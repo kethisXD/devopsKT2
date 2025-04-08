@@ -1,0 +1,13 @@
+services:
+  calcctl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kethisxd/calcctl:latest
+    container_name: calcctl-prod
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    environment:
+      - ENV=production
+    command: sleep infinity
