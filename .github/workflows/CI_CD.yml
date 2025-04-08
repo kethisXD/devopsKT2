@@ -13,6 +13,16 @@ permissions:
 
 
 jobs:
+  debug-event:
+    runs-on: self-hosted
+    steps:
+      - name: Debug event
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event action: ${{ github.event.action }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Is PR: ${{ github.event_name == 'pull_request' }}"
+          echo "Is merged: ${{ github.event.pull_request.merged == true }}"
   test_math-def:
     runs-on: self-hosted
     steps:
@@ -117,7 +127,8 @@ jobs:
               })
   update-version:
       needs: [test_math-def, test_ctl, security]
-      if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'feature') || contains(github.event.pull_request.labels.*.name, 'hotfix'))
+      if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || 
+        (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
       runs-on: self-hosted
       steps: 
         - name: Checkout code
