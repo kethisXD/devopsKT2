@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.0] - 2025-04-08
+### Branch: dev (PR #9)
+- ✨ Новая функциональность: feat: enhance deployment process and update documentation
+
+
+
 ## [0.6.0] - 2025-04-07
 ### Branch: dev (PR #8)
 - ✨ Новая функциональность: fix: add permissions docker workflow
