@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.2] - 2025-04-08
+### Branch: dev (PR #12)
+- 🐛 Исправление ошибки: test PR and deploy
+
+
+
 ## [0.7.1] - 2025-04-08
 ### Branch: dev (PR #10)
 - 🐛 Исправление ошибки: fix: ensure build-and-push job runs on self-hosted runner for merged …
