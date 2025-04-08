@@ -20,7 +20,8 @@ calcctl divide 15 3
 
 # Docker
 Этот проект управляется с помощью CI\CD и автоматически публикует в Docker Hub.
-
+> [!CAUTION]
+> Отключать vpn при работе ci\cd
 ## Docker Usage
 
 Pull the image:
