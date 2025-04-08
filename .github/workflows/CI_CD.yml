@@ -127,8 +127,7 @@ jobs:
               })
   update-version:
       needs: [test_math-def, test_ctl, security]
-      if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || 
-        (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
+      if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'feature') || contains(github.event.pull_request.labels.*.name, 'hotfix'))
       runs-on: self-hosted
       steps: 
         - name: Checkout code
