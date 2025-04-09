@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.2] - 2025-04-09
+### Branch: dev (PR #15)
+- 🐛 Исправление ошибки: feat: add workflow_dispatch trigger to release workflow
+
+
+
 ## [0.8.1] - 2025-04-09
 ### Branch: dev (PR #14)
 - 🐛 Исправление ошибки: fix file build sh
