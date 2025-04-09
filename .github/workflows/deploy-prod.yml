@@ -67,4 +67,5 @@ jobs:
     
       - name: Build binary
         run: |
+          chmod +x build.sh
           ./build.sh
