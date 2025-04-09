@@ -67,5 +67,24 @@ jobs:
     
       - name: Build binary
         run: |
-          chmod +x build.sh
-          ./build.sh
+          # Проверим текущую директорию
+          pwd
+          ls -la
+          
+          # Создаем содержимое напрямую, без внешнего скрипта
+          mkdir -p dist
+          
+          cat > dist/calcctl << 'EOF'
+          #!/usr/bin/env python3
+          
+          from app_ctl.calctl import main
+          
+          if __name__ == "__main__":
+              main()
+          EOF
+          
+          # Делаем исполняемым
+          chmod +x dist/calcctl
+          
+          # Проверяем результат
+          ls -la dist/
