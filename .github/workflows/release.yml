@@ -39,17 +39,16 @@ jobs:
           echo "" >> release-notes.md
           cat CHANGELOG.md >> release-notes.md
           
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create or update release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ env.VERSION }}
-          release_name: Версия ${{ env.VERSION }}
+          name: Версия ${{ env.VERSION }}
           body_path: release-notes.md
-          draft: false
-          prerelease: false
+          files: |
+            ./dist/calcctl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Upload calcctl binary
         uses: actions/upload-release-asset@v1
