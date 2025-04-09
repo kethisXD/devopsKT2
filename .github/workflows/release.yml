@@ -15,9 +15,24 @@ permissions:
   pull-requests: write
 
 jobs:
+
   create-release:
     runs-on: self-hosted
     steps:
+      - name: Check binary file
+        run: |
+          ls -la dist/ || echo "Directory does not exist"
+          mkdir -p dist
+          
+          # Создаем файл и делаем его исполняемым
+          echo '#!/usr/bin/env python3
+          from app_ctl.calctl import main
+          if __name__ == "__main__":
+          main()' > dist/calcctl
+          
+          chmod +x dist/calcctl
+          ls -la dist/
+
       - name: Checkout code
         uses: actions/checkout@v3
         
@@ -41,14 +56,13 @@ jobs:
           
       - name: Create or update release
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.VERSION }}
           name: Версия ${{ env.VERSION }}
           body_path: release-notes.md
-          files: |
-            ./dist/calcctl
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: ./dist/calcctl  
           
       - name: Upload calcctl binary
         uses: actions/upload-release-asset@v1
