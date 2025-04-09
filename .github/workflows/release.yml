@@ -15,61 +15,57 @@ permissions:
   pull-requests: write
 
 jobs:
-
   create-release:
     runs-on: self-hosted
     steps:
-      - name: Check binary file
-        run: |
-          ls -la dist/ || echo "Directory does not exist"
-          mkdir -p dist
-          
-          # Создаем файл и делаем его исполняемым
-          echo '#!/usr/bin/env python3
-          from app_ctl.calctl import main
-          if __name__ == "__main__":
-          main()' > dist/calcctl
-          
-          chmod +x dist/calcctl
-          ls -la dist/
-
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history and tags
         
       - name: Get version
         id: version
         run: |
           VERSION=$(cat version.txt)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+      
+      - name: Build binary file
+        run: |
+          mkdir -p dist
           
+          # Create proper executable script with correct indentation
+          cat   > dist/calcctl << 'EOF'  
+          #!/usr/bin/env python3
+          from app_  ctl.calctl import main
+
+          if       me__ ==   "__main__":
+              main()
+          EOF
+                    
+                    chmod +x dist/calcctl
+                    ls -la dist/
+                    
       - name: Generate release notes
         run: |
-          # Собираем информацию о коммитах с предыдущего релиза
+          # Get previous tag or default to v0.0.0 if none exists
           PREV_TAG=$(git tag --sort=-version:refname | head -n 1 || echo "v0.0.0")
-          echo "## Изменения с $PREV_TAG" > release-notes.md
+          echo "## Changes since $PREV_TAG" > release-notes.md
           echo "" >> release-notes.md
           git log $PREV_TAG..HEAD --pretty=format:"* %s (%an)" >> release-notes.md
           echo "" >> release-notes.md
-          echo "## Полный CHANGELOG" >> release-notes.md
+          echo "## Full CHANGELOG" >> release-notes.md
           echo "" >> release-notes.md
           cat CHANGELOG.md >> release-notes.md
           
-      - name: Create or update release
+      - name: Create GitHub release
+        id: create_release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.VERSION }}
-          name: Версия ${{ env.VERSION }}
+          name: Version ${{ env.VERSION }}
           body_path: release-notes.md
-          files: ./dist/calcctl  
-          
-      - name: Upload calcctl binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/calcctl
-          asset_name: calcctl
-          asset_content_type: application/octet-stream
+          files: ./dist/calcctl
+          draft: false
+          prerelease: false
