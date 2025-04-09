@@ -18,9 +18,21 @@ calcctl multiply 6 7
 calcctl divide 15 3
 ```
 
+
+## Релизы
+
+Стабильные версии проекта публикуются в разделе [Releases](https://github.com/kethisXD/devopsKT2/releases). 
+Каждый релиз содержит:
+
+- Номер версии
+- Список изменений с предыдущего релиза
+- Полный CHANGELOG
+- Бинарный файл calcctl для использования без установки
+
 # Docker
 Этот проект управляется с помощью CI\CD и автоматически публикует в Docker Hub.
-
+> [!CAUTION]
+> Отключать vpn при работе ci\cd
 ## Docker Usage
 
 Pull the image:
