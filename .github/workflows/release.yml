@@ -1,0 +1,61 @@
+name: Create GitHub Release
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Production"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  create-release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cat version.txt)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+      - name: Generate release notes
+        run: |
+          # Собираем информацию о коммитах с предыдущего релиза
+          PREV_TAG=$(git tag --sort=-version:refname | head -n 1 || echo "v0.0.0")
+          echo "## Изменения с $PREV_TAG" > release-notes.md
+          echo "" >> release-notes.md
+          git log $PREV_TAG..HEAD --pretty=format:"* %s (%an)" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "## Полный CHANGELOG" >> release-notes.md
+          echo "" >> release-notes.md
+          cat CHANGELOG.md >> release-notes.md
+          
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.VERSION }}
+          release_name: Версия ${{ env.VERSION }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
+          
+      - name: Upload calcctl binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/calcctl
+          asset_name: calcctl
+          asset_content_type: application/octet-stream

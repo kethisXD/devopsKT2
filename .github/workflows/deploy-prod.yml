@@ -64,3 +64,7 @@ jobs:
               repo: context.repo.repo,
               labels: ['PROD']
             })
+    
+      - name: Build binary
+        run: |
+          ./build.sh
